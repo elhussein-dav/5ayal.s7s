@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خيال AI | منصة تصميم وتوليد الصور بالذكاء الاصطناعي</title>
+
+    <!-- خط Cairo العربي العصري من Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- مكتبة Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- إعدادات Tailwind المخصصة للألوان والخطوط -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#07070E',
+                        darkCard: '#111122',
+                        neonPurple: '#9333EA',
+                        neonCyan: '#06B6D4',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #07070E;
+            color: #F8FAFC;
+            overflow-x: hidden;
+        }
+
+        /* تأثيرات الزجاجية (Glassmorphism) */
+        .glass {
+            background: rgba(17, 17, 34, 0.65);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-strong {
+            background: rgba(20, 20, 40, 0.82);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(168, 85, 247, 0.22);
+        }
+
+        /* تدرج النصوص النيونية */
+        .text-gradient {
+            background: linear-gradient(135deg, #C084FC 0%, #38BDF8 50%, #22D3EE 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* تدرج الأزرار الرئيسية */
+        .btn-gradient {
+            background: linear-gradient(135deg, #9333EA 0%, #6366F1 50%, #06B6D4 100%);
+            background-size: 200% 200%;
+            transition: all 0.35s ease;
+        }
+
+        .btn-gradient:hover {
+            background-position: 100% 0;
+            box-shadow: 0 0 28px rgba(147, 51, 234, 0.45), 0 0 14px rgba(6, 182, 212, 0.35);
+            transform: translateY(-1px);
+        }
+
+        /* تأثير التحميل اللامع */
+        .shimmer-bg {
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(168,85,247,0.14) 50%, rgba(255,255,255,0.03) 75%);
+            background-size: 200% 100%;
+        }
+
+        /* شبكة الخلفية الدقيقة */
+        .bg-grid {
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+
+        /* تخصيص شريط التمرير */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #07070E;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27274A;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7E22CE;
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 antialiased selection:bg-purple-600/40 selection:text-white">
+
+    <!-- خلفيات مضيئة متدرجة (Ambient Glows) -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute inset-0 bg-grid opacity-70"></div>
+        <div class="absolute -top-32 -right-32 w-96 h-96 bg-purple-600/20 rounded-full blur-[130px] animate-pulse-slow"></div>
+        <div class="absolute top-1/3 -left-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-[130px] animate-pulse-slow"></div>
+        <div class="absolute bottom-0 right-1/3 w-80 h-80 bg-indigo-600/15 rounded-full blur-[120px]"></div>
+    </div>
+
+    <!-- إشعارات عائمة (Toast Notification) بديلة عن alert -->
+    <div id="toast-container" class="fixed bottom-6 left-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ========================================== -->
+    <!-- 1. شريط التنقل (Navbar) -->
+    <!-- ========================================== -->
+    <header class="sticky top-0 z-40 glass border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- الشعار -->
+                <a href="#" class="flex items-center gap-3 group">
+                    <div class="w-11 h-11 rounded-2xl btn-gradient flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-black tracking-tight text-white">خيال <span class="text-gradient">AI</span></span>
+                        <span class="text-[11px] text-slate-400 -mt-1">استوديو الإبداع الذكي</span>
+                    </div>
+                </a>
+
+                <!-- روابط التنقل (للكمبيوتر) -->
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="#studio" class="text-sm font-semibold text-slate-200 hover:text-cyan-400 transition-colors">الاستوديو</a>
+                    <a href="#gallery" class="text-sm font-semibold text-slate-300 hover:text-cyan-400 transition-colors">المعرض</a>
+                    <a href="#features" class="text-sm font-semibold text-slate-300 hover:text-cyan-400 transition-colors">المميزات</a>
+                    <a href="#pricing" class="text-sm font-semibold text-slate-300 hover:text-cyan-400 transition-colors">الباقات</a>
+                </nav>
+
+                <!-- زر البدء + قائمة الموبايل -->
+                <div class="flex items-center gap-3">
+                    <a href="#studio" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-xl btn-gradient text-sm font-bold text-white shadow-lg shadow-purple-500/25">
+                        <span>ابدأ التصميم مجاناً</span>
+                        <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                    </a>
+
+                    <!-- زر القائمة للموبايل -->
+                    <button id="mobile-menu-btn" aria-label="القائمة" class="md:hidden p-2.5 rounded-xl glass text-slate-200 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- قائمة التنقل للموبايل -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-[#0B0B17]/95 backdrop-blur-xl px-4 py-4 space-y-2">
+            <a href="#studio" class="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/5">الاستوديو</a>
+            <a href="#gallery" class="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/5">المعرض</a>
+            <a href="#features" class="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/5">المميزات</a>
+            <a href="#pricing" class="block px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/5">الباقات</a>
+            <a href="#studio" class="block text-center px-4 py-3 rounded-xl btn-gradient text-sm font-bold text-white mt-2">ابدأ التصميم مجاناً</a>
+        </div>
+    </header>
+
+    <main class="relative z-10">
+
+        <!-- ========================================== -->
+        <!-- 2. القسم الرئيسي + الاستوديو التفاعلي -->
+        <!-- ========================================== -->
+        <section id="studio" class="pt-12 pb-20 lg:pt-16 lg:pb-28 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto">
+
+                <!-- العنوان الرئيسي -->
+                <div class="text-center max-w-3xl mx-auto mb-12">
+                    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-purple-500/30 text-xs sm:text-sm font-semibold text-purple-300 mb-6">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span>مدعوم بأحدث نماذج الذكاء الاصطناعي التوليدي</span>
+                    </div>
+
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black leading-tight text-white mb-5">
+                        حوّل أفكارك إلى <span class="text-gradient">صور مذهلة</span> بالذكاء الاصطناعي
+                    </h1>
+
+                    <p class="text-base sm:text-lg text-slate-400 leading-relaxed">
+                        اكتب وصفاً بسيطاً باللغة العربية، اختر الستايل الفني والأبعاد المناسبة، ودع <strong class="text-slate-200">خيال AI</strong> يصمم لك لوحات فنية، بوسترات، وشعارات بجودة احترافية في ثوانٍ.
+                    </p>
+                </div>
+
+                <!-- صندوق الاستوديو التفاعلي -->
+                <div class="glass-strong rounded-3xl p-5 sm:p-8 shadow-2xl shadow-purple-950/40">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                        <!-- العمود الأيمن: أدوات التحكم والإدخال -->
+                        <div class="lg:col-span-6 space-y-6">
+
+                            <!-- حقل إدخال الوصف -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2.5">
+                                    <label for="prompt-input" class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                                        صف الصورة التي تتخيلها
+                                    </label>
+                                    <button id="random-prompt-btn" type="button" class="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 px-3 py-1.5 rounded-xl transition-all">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                        </svg>
+                                        <span>اقتراح فكرة عشوائية</span>
+                                    </button>
+                                </div>
+                                <textarea
+                                    id="prompt-input"
+                                    rows="4"
+                                    placeholder="مثال: مدينة عربية مستقبلية تطفو فوق السحاب وقت الغروب، إضاءة سينمائية دافئة، تفاصيل دقيقة جداً..."
+                                    class="w-full rounded-2xl bg-[#0A0A16]/90 border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none p-4 text-sm sm:text-base text-white placeholder-slate-500 resize-none transition-all leading-relaxed"
+                                ></textarea>
+                            </div>
+
+                            <!-- اختيار الستايل الفني -->
+                            <div>
+                                <label class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-3">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                    اختر الستايل الفني
+                                </label>
+                                <div id="style-options" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                    <button type="button" data-style="واقعي سينمائي" data-prompt-suffix="ultra-realistic cinematic photography, 8k resolution, dramatic lighting, shallow depth of field, photorealistic" class="style-btn active-style p-3 rounded-xl border text-right transition-all flex items-center gap-2.5 bg-purple-600/25 border-purple-500 text-white shadow-md shadow-purple-500/15">
+                                        <span class="text-lg">🎬</span>
+                                        <span class="text-xs sm:text-sm font-bold">واقعي سينمائي</span>
+                                    </button>
+                                    <button type="button" data-style="أنمي" data-prompt-suffix="high quality anime art style, vibrant colors, Studio Ghibli and Makoto Shinkai inspired, crisp lineart, detailed background" class="style-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-right transition-all flex items-center gap-2.5">
+                                        <span class="text-lg">✨</span>
+                                        <span class="text-xs sm:text-sm font-bold">أنمي</span>
+                                    </button>
+                                    <button type="button" data-style="ثلاثي الأبعاد 3D" data-prompt-suffix="3D Octane render, Unreal Engine 5, Pixar style lighting, smooth glossy textures, studio illumination, highly detailed 3D artwork" class="style-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-right transition-all flex items-center gap-2.5">
+                                        <span class="text-lg">🧊</span>
+                                        <span class="text-xs sm:text-sm font-bold">ثلاثي الأبعاد 3D</span>
+                                    </button>
+                                    <button type="button" data-style="سايبر بانك" data-prompt-suffix="cyberpunk futuristic aesthetic, neon purple and cyan lights, rainy reflective streets, sci-fi atmosphere, ultra detailed" class="style-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-right transition-all flex items-center gap-2.5">
+                                        <span class="text-lg">🌆</span>
+                                        <span class="text-xs sm:text-sm font-bold">سايبر بانك</span>
+                                    </button>
+                                    <button type="button" data-style="رسم زيتي" data-prompt-suffix="classical oil painting on canvas, visible expressive brushstrokes, rich textures, museum masterpiece, warm dramatic chiaroscuro" class="style-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-right transition-all flex items-center gap-2.5">
+                                        <span class="text-lg">🎨</span>
+                                        <span class="text-xs sm:text-sm font-bold">رسم زيتي</span>
+                                    </button>
+                                    <button type="button" data-style="تصميم لوجو" data-prompt-suffix="minimalist modern professional vector logo design, clean geometric shapes, balanced negative space, flat brand identity presentation on dark background" class="style-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-right transition-all flex items-center gap-2.5">
+                                        <span class="text-lg">💎</span>
+                                        <span class="text-xs sm:text-sm font-bold">تصميم لوجو</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- اختيار الأبعاد (Aspect Ratio) -->
+                            <div>
+                                <label class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-3">
+                                    <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                                    أبعاد الصورة
+                                </label>
+                                <div id="ratio-options" class="grid grid-cols-3 gap-3">
+                                    <button type="button" data-ratio="1:1" class="ratio-btn active-ratio p-3 rounded-xl border bg-cyan-500/20 border-cyan-400 text-white transition-all flex flex-col items-center justify-center gap-1.5">
+                                        <div class="w-5 h-5 border-2 border-current rounded-sm"></div>
+                                        <span class="text-xs font-bold">مربع 1:1</span>
+                                    </button>
+                                    <button type="button" data-ratio="16:9" class="ratio-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 transition-all flex flex-col items-center justify-center gap-1.5">
+                                        <div class="w-7 h-4 border-2 border-current rounded-sm"></div>
+                                        <span class="text-xs font-bold">عرضي 16:9</span>
+                                    </button>
+                                    <button type="button" data-ratio="9:16" class="ratio-btn p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 transition-all flex flex-col items-center justify-center gap-1.5">
+                                        <div class="w-4 h-7 border-2 border-current rounded-sm"></div>
+                                        <span class="text-xs font-bold">طولي 9:16</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- زر التوليد -->
+                            <button id="generate-btn" type="button" class="w-full py-4 px-6 rounded-2xl btn-gradient text-base sm:text-lg font-extrabold text-white shadow-xl shadow-purple-600/30 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
+                                <svg id="gen-icon" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                                </svg>
+                                <span id="gen-btn-text">توليد الصورة الآن</span>
+                            </button>
+                        </div>
+
+                        <!-- العمود الأيسر: منطقة عرض النتيجة -->
+                        <div class="lg:col-span-6 flex flex-col h-full">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <span class="text-sm font-bold text-slate-200">معاينة النتيجة</span>
+                                <span id="result-meta" class="text-xs text-slate-400">جاهز للتوليد</span>
+                            </div>
+
+                            <!-- حاوية الصورة -->
+                            <div id="result-frame" class="relative w-full min-h-[340px] sm:min-h-[430px] rounded-2xl bg-[#0A0A16] border border-white/10 overflow-hidden flex items-center justify-center p-3">
+
+                                <!-- الحالة الافتراضية قبل التوليد -->
+                                <div id="empty-state" class="text-center max-w-xs px-4 py-8">
+                                    <div class="w-20 h-20 mx-auto mb-5 rounded-3xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-white/10 flex items-center justify-center animate-float">
+                                        <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-base font-bold text-white mb-2">لوحتك الفنية ستظهر هنا</h3>
+                                    <p class="text-xs text-slate-400 leading-relaxed">
+                                        اكتب فكرتك في المربع المقابل أو اختر أحد النماذج الجاهزة من المعرض بالأسفل للبدء فوراً.
+                                    </p>
+                                </div>
+
+                                <!-- حالة التحميل الأنيقة -->
+                                <div id="loading-state" class="hidden absolute inset-0 shimmer-bg animate-shimmer flex flex-col items-center justify-center p-6 text-center z-10 bg-[#0A0A16]/90 backdrop-blur-sm">
+                                    <div class="relative w-20 h-20 mb-5">
+                                        <div class="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                                        <div class="absolute inset-0 rounded-full border-4 border-t-cyan-400 border-r-purple-500 border-b-transparent border-l-transparent animate-spin"></div>
+                                        <div class="absolute inset-3 rounded-full bg-purple-500/10 flex items-center justify-center">
+                                            <svg class="w-7 h-7 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <p id="loading-text" class="text-base font-bold text-white mb-1">جاري تحويل خيالك إلى واقع...</p>
+                                    <p class="text-xs text-slate-400">يتم الآن معالجة الإضاءة والتفاصيل الدقيقة</p>
+                                </div>
+
+                                <!-- الصورة المولّدة -->
+                                <img id="generated-image" src="" alt="الصورة المولدة بالذكاء الاصطناعي" class="hidden max-h-[430px] w-auto rounded-xl object-contain shadow-2xl transition-opacity duration-500" />
+                            </div>
+
+                            <!-- أزرار التحكم بالنتيجة -->
+                            <div id="result-actions" class="hidden mt-4 grid grid-cols-2 gap-3">
+                                <button id="download-btn" type="button" class="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-sm font-bold text-white flex items-center justify-center gap-2 transition-all">
+                                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    <span>تحميل الصورة</span>
+                                </button>
+                                <button id="copy-prompt-btn" type="button" class="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-sm font-bold text-white flex items-center justify-center gap-2 transition-all">
+                                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                                    </svg>
+                                    <span>نسخ الوصف</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. قسم معرض الإبداعات (Showcase Gallery) -->
+        <!-- ========================================== -->
+        <section id="gallery" class="py-20 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">إلهام بلا حدود</span>
+                        <h2 class="text-2xl sm:text-4xl font-black text-white mt-1">معرض إبداعات <span class="text-gradient">خيال AI</span></h2>
+                    </div>
+                    <p class="text-sm text-slate-400 max-w-md">
+                        استكشف نماذج مصممة بأنماط مختلفة، واضغط على "جرّب هذا الوصف" لتخصيصها وتوليد نسختك الخاصة فوراً.
+                    </p>
+                </div>
+
+                <!-- شبكة البطاقات (تُملأ ديناميكياً من JavaScript) -->
+                <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- يتم توليد البطاقات برمجياً هنا -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. قسم المميزات (Features) -->
+        <!-- ========================================== -->
+        <section id="features" class="py-20 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <span class="text-xs font-bold uppercase tracking-wider text-purple-400">لماذا خيال AI؟</span>
+                    <h2 class="text-2xl sm:text-4xl font-black text-white mt-2 mb-4">قوة إبداعية مصممة للمحترفين</h2>
+                    <p class="text-sm sm:text-base text-slate-400">
+                        أدوات متقدمة تجمع بين سهولة الاستخدام والدقة الفائقة لتمنحك نتائج تنافس استوديوهات التصميم العالمية.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- ميزة 1: دقة 4K -->
+                    <div class="glass rounded-3xl p-6 hover:border-purple-500/40 transition-all group">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-white mb-2">دقة فائقة 4K</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            تفاصيل حادة، إضاءة واقعية، وألوان غنية جاهزة للطباعة والنشر على جميع المنصات الرقمية دون فقدان للجودة.
+                        </p>
+                    </div>
+
+                    <!-- ميزة 2: فهم اللغة العربية -->
+                    <div class="glass rounded-3xl p-6 hover:border-cyan-500/40 transition-all group">
+                        <div class="w-14 h-14 rounded-2xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-7 h-7 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-white mb-2">فهم الأوامر العربية بدقة</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            لا حاجة للترجمة! اكتب وصفك بالفصحى أو بلهجتك العربية وسيفهم النظام أدق التفاصيل الثقافية والبصرية.
+                        </p>
+                    </div>
+
+                    <!-- ميزة 3: سرعة التوليد -->
+                    <div class="glass rounded-3xl p-6 hover:border-indigo-500/40 transition-all group">
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-white mb-2">سرعة توليد فائقة</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            بنية سحابية متطورة تنجز تصاميمك خلال ثوانٍ معدودة لتمنحك حرية التجربة والتعديل دون أي انتظار ممل.
+                        </p>
+                    </div>
+
+                    <!-- ميزة 4: تعدد الأنماط -->
+                    <div class="glass rounded-3xl p-6 hover:border-pink-500/40 transition-all group">
+                        <div class="w-14 h-14 rounded-2xl bg-pink-500/15 border border-pink-500/25 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                            <svg class="w-7 h-7 text-pink-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-extrabold text-white mb-2">تعدد الأنماط الفنية</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            من التصوير السينمائي والأنمي إلى الرسوم ثلاثية الأبعاد وتصميم الشعارات؛ كل ما تحتاجه في مكان واحد.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 5. قسم الباقات (Pricing) -->
+        <!-- ========================================== -->
+        <section id="pricing" class="py-20 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center max-w-2xl mx-auto mb-14">
+                    <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">خطط مرنة</span>
+                    <h2 class="text-2xl sm:text-4xl font-black text-white mt-2 mb-4">اختر الباقة المناسبة لاحتياجك</h2>
+                    <p class="text-sm sm:text-base text-slate-400">ابدأ مجاناً وطوّر خطتك في أي وقت مع نمو مشاريعك الإبداعية.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    <!-- الباقة المجانية -->
+                    <div class="glass rounded-3xl p-7 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-white">الباقة المجانية</h3>
+                            <p class="text-xs text-slate-400 mt-1">مثالية للاستكشاف والتجربة اليومية</p>
+                            <div class="my-6 flex items-baseline gap-1">
+                                <span class="text-4xl font-black text-white">0$</span>
+                                <span class="text-xs text-slate-400">/ شهرياً</span>
+                            </div>
+                            <ul class="space-y-3 text-sm text-slate-300 mb-8">
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> 20 صورة يومياً مجاناً</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> الوصول لجميع الأنماط الأساسية</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> تحميل بدقة قياسية HD</li>
+                            </ul>
+                        </div>
+                        <a href="#studio" class="block text-center py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-sm font-bold text-white transition-all">ابدأ الآن مجاناً</a>
+                    </div>
+
+                    <!-- الباقة الاحترافية -->
+                    <div class="glass-strong rounded-3xl p-7 flex flex-col justify-between relative border-purple-500/50 shadow-2xl shadow-purple-900/30">
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full btn-gradient text-xs font-bold text-white">
+                            الأكثر شعبية
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-extrabold text-white">باقة المبدعين Pro</h3>
+                            <p class="text-xs text-slate-300 mt-1">للمصممين وصناع المحتوى المحترفين</p>
+                            <div class="my-6 flex items-baseline gap-1">
+                                <span class="text-4xl font-black text-gradient">15$</span>
+                                <span class="text-xs text-slate-400">/ شهرياً</span>
+                            </div>
+                            <ul class="space-y-3 text-sm text-slate-200 mb-8">
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> توليد غير محدود وسريع</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> تحميل بدقة 4K فائقة</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> حقوق استخدام تجاري كاملة</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> بدون علامة مائية</li>
+                            </ul>
+                        </div>
+                        <a href="#studio" class="block text-center py-3 rounded-xl btn-gradient text-sm font-bold text-white transition-all">اشترك في Pro</a>
+                    </div>
+
+                    <!-- باقة الشركات -->
+                    <div class="glass rounded-3xl p-7 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-lg font-extrabold text-white">باقة الفرق والوكالات</h3>
+                            <p class="text-xs text-slate-400 mt-1">للشركات وفرق التسويق والإنتاج</p>
+                            <div class="my-6 flex items-baseline gap-1">
+                                <span class="text-4xl font-black text-white">49$</span>
+                                <span class="text-xs text-slate-400">/ شهرياً</span>
+                            </div>
+                            <ul class="space-y-3 text-sm text-slate-300 mb-8">
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> حتى 10 أعضاء في مساحة عمل واحدة</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> وصول مباشر لـ API مخصص</li>
+                                <li class="flex items-center gap-2"><span class="text-cyan-400">✓</span> دعم فني ذو أولوية على مدار الساعة</li>
+                            </ul>
+                        </div>
+                        <a href="#studio" class="block text-center py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-sm font-bold text-white transition-all">تواصل معنا</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- 6. التذييل (Footer) -->
+    <!-- ========================================== -->
+    <footer class="relative z-10 border-t border-white/10 bg-[#05050B]/90 pt-14 pb-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-10 border-b border-white/10">
+                <!-- نبذة عن المنصة -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl btn-gradient flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                            </svg>
+                        </div>
+                        <span class="text-xl font-black text-white">خيال <span class="text-gradient">AI</span></span>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed max-w-md">
+                        منصتك العربية الأولى لتوليد وتصميم الصور بالذكاء الاصطناعي. نجمع بين الإبداع البشري وقوة الخوارزميات الحديثة لتحويل أفكارك إلى محتوى بصري استثنائي.
+                    </p>
+                </div>
+
+                <!-- روابط سريعة -->
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4">روابط سريعة</h4>
+                    <ul class="space-y-2.5 text-sm text-slate-400">
+                        <li><a href="#studio" class="hover:text-cyan-400 transition-colors">استوديو التوليد</a></li>
+                        <li><a href="#gallery" class="hover:text-cyan-400 transition-colors">معرض الإبداعات</a></li>
+                        <li><a href="#features" class="hover:text-cyan-400 transition-colors">المميزات</a></li>
+                        <li><a href="#pricing" class="hover:text-cyan-400 transition-colors">الباقات والأسعار</a></li>
+                    </ul>
+                </div>
+
+                <!-- الدعم والسياسات -->
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4">الدعم والمساعدة</h4>
+                    <ul class="space-y-2.5 text-sm text-slate-400">
+                        <li><a href="#studio" class="hover:text-cyan-400 transition-colors">دليل كتابة الأوامر</a></li>
+                        <li><a href="#pricing" class="hover:text-cyan-400 transition-colors">الأسئلة الشائعة</a></li>
+                        <li><a href="#" class="hover:text-cyan-400 transition-colors">سياسة الخصوصية</a></li>
+                        <li><a href="#" class="hover:text-cyan-400 transition-colors">شروط الاستخدام</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+                <p>© 2026 منصة خيال AI. جميع الحقوق محفوظة.</p>
+                <p>صُمم بشغف لتجربة إبداعية عربية متكاملة</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- المنطق البرمجي (JavaScript + Gemini API) -->
+    <!-- ========================================== -->
+    <script>
+        // ==========================================
+        // 1. البيانات الأولية والإعدادات
+        // ==========================================
+        const randomPrompts = [
+            "رائد فضاء عربي يقف على سطح كوكب المريخ وينظر إلى مجرة مضيئة بألوان البنفسجي والسماوي، تصوير سينمائي فائق الواقعية",
+            "قلعة تاريخية تطفو فوق السحاب محاطة بشلالات متلألئة تحت ضوء القمر، أسلوب أنمي غني بالتفاصيل",
+            "تصميم زجاجة عطر فاخرة باللون الأسود والذهبي موضوعة على صخرة بركانية وسط ضباب ناعم وإضاءة استوديو احترافية",
+            "شارع مستقبلي في القاهرة عام 2099 مليء باللافتات النيونية العربية والسيارات الطائرة تحت المطر، طابع سايبر بانك",
+            "شعار عصري وبسيط لمقهى قهوة مختصة يجمع بين شكل فنجان القهوة والهلال بخطوط ذهبية أنيقة على خلفية داكنة",
+            "شخصية محارب مستقبلي ثلاثي الأبعاد يرتدي درعاً مضيئاً بتفاصيل ميكانيكية دقيقة، إضاءة سينمائية"
+        ];
+
+        const showcaseItems = [
+            {
+                title: "بوستر فيلم خيال علمي",
+                category: "بوسترات",
+                style: "سايبر بانك",
+                ratio: "9:16",
+                prompt: "بوستر سينمائي لمدينة مستقبلية مضيئة بألوان النيون البنفسجي والسماوي، سيارة طائرة تخترق الضباب، إضاءة درامية مبهرة",
+                image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+                fallback: "https://placehold.co/600x750/13132b/a855f7?text=Cyberpunk+Poster"
+            },
+            {
+                title: "شخصية ثلاثية الأبعاد",
+                category: "شخصيات",
+                style: "ثلاثي الأبعاد 3D",
+                ratio: "1:1",
+                prompt: "روبوت لطيف ثلاثي الأبعاد بتصميم مستقبلي أبيض وأزرق سماوي يحمل كاميرا صغيرة، إضاءة استوديو ناعمة بأسلوب بيكسار",
+                image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80",
+                fallback: "https://placehold.co/600x750/13132b/38bdf8?text=3D+Character"
+            },
+            {
+                title: "واحة صحراوية ساحرة",
+                category: "مناظر طبيعية",
+                style: "واقعي سينمائي",
+                ratio: "16:9",
+                prompt: "واحة صحراوية ساحرة وسط كثبان رملية ذهبية وقت الشفق مع سماء مرصعة بالنجوم وانعكاس المياه الصافية، تصوير 8K",
+                image: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80",
+                fallback: "https://placehold.co/600x750/13132b/f59e0b?text=Desert+Oasis"
+            },
+            {
+                title: "إعلان منتج فاخر",
+                category: "تصاميم منتجات",
+                style: "واقعي سينمائي",
+                ratio: "1:1",
+                prompt: "تصوير إعلاني احترافي لساعة يد ذكية فاخرة تطفو وسط رذاذ الماء المضيء على خلفية سوداء فاخرة مع انعكاسات نيون",
+                image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
+                fallback: "https://placehold.co/600x750/13132b/22d3ee?text=Product+Design"
+            }
+        ];
+
+        // الحالة الحالية للاستوديو
+        let selectedStyle = "واقعي سينمائي";
+        let selectedStyleSuffix = "ultra-realistic cinematic photography, 8k resolution, dramatic lighting, shallow depth of field, photorealistic";
+        let selectedRatio = "1:1";
+        let lastGeneratedImageUrl = "";
+        let lastUsedPrompt = "";
+
+        // عناصر الواجهة
+        const promptInput = document.getElementById('prompt-input');
+        const randomPromptBtn = document.getElementById('random-prompt-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const genBtnText = document.getElementById('gen-btn-text');
+        const emptyState = document.getElementById('empty-state');
+        const loadingState = document.getElementById('loading-state');
+        const loadingText = document.getElementById('loading-text');
+        const generatedImage = document.getElementById('generated-image');
+        const resultActions = document.getElementById('result-actions');
+        const resultMeta = document.getElementById('result-meta');
+        const downloadBtn = document.getElementById('download-btn');
+        const copyPromptBtn = document.getElementById('copy-prompt-btn');
+        const galleryGrid = document.getElementById('gallery-grid');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        // ==========================================
+        // 2. نظام الإشعارات الأنيق (Toast)
+        // ==========================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const colors = {
+                success: 'border-emerald-500/40 bg-emerald-950/90 text-emerald-200',
+                error: 'border-rose-500/40 bg-rose-950/90 text-rose-200',
+                info: 'border-cyan-500/40 bg-[#12122A]/95 text-cyan-100'
+            };
+
+            toast.className = `pointer-events-auto px-4 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition-all duration-300 translate-y-4 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full ${type === 'error' ? 'bg-rose-400' : type === 'success' ? 'bg-emerald-400' : 'bg-cyan-400'}"></span>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ==========================================
+        // 3. قائمة الموبايل
+        // ==========================================
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+
+        // ==========================================
+        // 4. التحكم بالستايل والأبعاد
+        // ==========================================
+        function selectStyleButton(styleName) {
+            document.querySelectorAll('.style-btn').forEach(btn => {
+                if (btn.dataset.style === styleName) {
+                    btn.classList.remove('border-white/10', 'bg-white/5', 'text-slate-300');
+                    btn.classList.add('bg-purple-600/25', 'border-purple-500', 'text-white', 'shadow-md', 'shadow-purple-500/15');
+                    selectedStyle = btn.dataset.style;
+                    selectedStyleSuffix = btn.dataset.promptSuffix;
+                } else {
+                    btn.classList.remove('bg-purple-600/25', 'border-purple-500', 'text-white', 'shadow-md', 'shadow-purple-500/15');
+                    btn.classList.add('border-white/10', 'bg-white/5', 'text-slate-300');
+                }
+            });
+        }
+
+        function selectRatioButton(ratioValue) {
+            document.querySelectorAll('.ratio-btn').forEach(btn => {
+                if (btn.dataset.ratio === ratioValue) {
+                    btn.classList.remove('border-white/10', 'bg-white/5', 'text-slate-300');
+                    btn.classList.add('bg-cyan-500/20', 'border-cyan-400', 'text-white');
+                    selectedRatio = btn.dataset.ratio;
+                } else {
+                    btn.classList.remove('bg-cyan-500/20', 'border-cyan-400', 'text-white');
+                    btn.classList.add('border-white/10', 'bg-white/5', 'text-slate-300');
+                }
+            });
+        }
+
+        document.querySelectorAll('.style-btn').forEach(btn => {
+            btn.addEventListener('click', () => selectStyleButton(btn.dataset.style));
+        });
+
+        document.querySelectorAll('.ratio-btn').forEach(btn => {
+            btn.addEventListener('click', () => selectRatioButton(btn.dataset.ratio));
+        });
+
+        // زر اقتراح فكرة عشوائية
+        randomPromptBtn.addEventListener('click', () => {
+            const randomIdea = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
+            promptInput.value = randomIdea;
+            promptInput.focus();
+            showToast('تم اقتراح فكرة إبداعية جديدة!', 'info');
+        });
+
+        // ==========================================
+        // 5. بناء معرض الإبداعات (Showcase Gallery)
+        // ==========================================
+        function renderGallery() {
+            galleryGrid.innerHTML = showcaseItems.map((item, idx) => `
+                <article class="glass rounded-3xl overflow-hidden group flex flex-col justify-between hover:border-purple-500/40 transition-all duration-300 hover:-translate-y-1">
+                    <div>
+                        <div class="relative h-56 overflow-hidden bg-[#0A0A16]">
+                            <img 
+                                src="${item.image}" 
+                                alt="${item.title}"
+                                onerror="this.onerror=null; this.src='${item.fallback}';"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-[#0B0B17] via-transparent to-transparent"></div>
+                            <span class="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[11px] font-bold text-cyan-300">
+                                ${item.category}
+                            </span>
+                            <span class="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-purple-600/80 backdrop-blur-md text-[11px] font-bold text-white">
+                                ${item.style}
+                            </span>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="text-base font-extrabold text-white mb-2">${item.title}</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">${item.prompt}</p>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-5">
+                        <button 
+                            type="button"
+                            onclick="tryShowcasePrompt(${idx})"
+                            class="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-purple-600/25 border border-white/10 hover:border-purple-500/50 text-xs font-bold text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2"
+                        >
+                            <span>جرّب هذا الوصف</span>
+                            <svg class="w-3.5 h-3.5 rotate-180" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                        </button>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // نقل الوصف من المعرض إلى الاستوديو مباشرة
+        window.tryShowcasePrompt = function(index) {
+            const item = showcaseItems[index];
+            if (!item) return;
+
+            promptInput.value = item.prompt;
+            selectStyleButton(item.style);
+            selectRatioButton(item.ratio);
+
+            document.getElementById('studio').scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => promptInput.focus(), 500);
+            showToast(`تم تحميل وصف "${item.title}" في الاستوديو`, 'success');
+        };
+
+        // ==========================================
+        // 6. توليد الصور عبر Gemini API مع Exponential Backoff
+        // ==========================================
+        async function fetchWithRetry(url, options, maxRetries = 4) {
+            let delay = 1000;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                    // إعادة المحاولة عند أخطاء الضغط أو الخادم
+                    if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                        continue;
+                    }
+                    return response;
+                } catch (err) {
+                    if (attempt < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                        continue;
+                    }
+                    throw err;
+                }
+            }
+        }
+
+        const loadingMessages = [
+            "جاري تحليل الوصف العربي بدقة...",
+            "يتم رسم التفاصيل وتوزيع الإضاءة...",
+            "جاري تطبيق الستايل الفني المختار...",
+            "اللمسات الأخيرة لرفع جودة الصورة..."
+        ];
+
+        async function generateImage() {
+            const userPrompt = promptInput.value.trim();
+            if (!userPrompt) {
+                showToast('من فضلك اكتب وصفاً للصورة أولاً أو استخدم زر الاقتراح العشوائي', 'error');
+                promptInput.focus();
+                return;
+            }
+
+            // تفعيل حالة التحميل
+            generateBtn.disabled = true;
+            genBtnText.textContent = 'جاري التوليد...';
+            emptyState.classList.add('hidden');
+            generatedImage.classList.add('hidden');
+            resultActions.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            resultMeta.textContent = `${selectedStyle} • ${selectedRatio}`;
+
+            // تدوير رسائل التحميل
+            let msgIdx = 0;
+            loadingText.textContent = loadingMessages[0];
+            const msgInterval = setInterval(() => {
+                msgIdx = (msgIdx + 1) % loadingMessages.length;
+                loadingText.textContent = loadingMessages[msgIdx];
+            }, 2200);
+
+            try {
+                const apiKey = ""; // يتم تزويده تلقائياً في بيئة التشغيل
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+
+                const fullPrompt = `${userPrompt}. Art style: ${selectedStyleSuffix}. High quality, masterpiece.`;
+
+                const payload = {
+                    contents: [{
+                        role: 'user',
+                        parts: [{ text: fullPrompt }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ['IMAGE'],
+                        imageConfig: {
+                            aspectRatio: selectedRatio
+                        }
+                    }
+                };
+
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+                if (!part || !part.inlineData?.data) {
+                    throw new Error('لم يتم استلام بيانات الصورة من النموذج');
+                }
+
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                lastGeneratedImageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
+                lastUsedPrompt = userPrompt;
+
+                // عرض الصورة
+                generatedImage.src = lastGeneratedImageUrl;
+                generatedImage.classList.remove('hidden');
+                resultActions.classList.remove('hidden');
+                resultMeta.textContent = `تم التوليد • ${selectedStyle} (${selectedRatio})`;
+                showToast('تم توليد صورتك بنجاح!', 'success');
+
+            } catch (error) {
+                emptyState.classList.remove('hidden');
+                resultMeta.textContent = 'تعذر التوليد';
+                showToast('حدث خطأ أثناء توليد الصورة. يرجى المحاولة مرة أخرى.', 'error');
+            } finally {
+                clearInterval(msgInterval);
+                loadingState.classList.add('hidden');
+                generateBtn.disabled = false;
+                genBtnText.textContent = 'توليد الصورة الآن';
+            }
+        }
+
+        generateBtn.addEventListener('click', generateImage);
+
+        // ==========================================
+        // 7. تحميل الصورة ونسخ الوصف
+        // ==========================================
+        downloadBtn.addEventListener('click', () => {
+            if (!lastGeneratedImageUrl) return;
+            const link = document.createElement('a');
+            link.href = lastGeneratedImageUrl;
+            link.download = `khayal-ai-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('جاري تحميل الصورة على جهازك...', 'success');
+        });
+
+        copyPromptBtn.addEventListener('click', () => {
+            const textToCopy = lastUsedPrompt || promptInput.value.trim();
+            if (!textToCopy) return;
+
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.opacity = '0';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('تم نسخ الوصف إلى الحافظة بنجاح!', 'success');
+            } catch (e) {
+                showToast('تعذر نسخ الوصف تلقائياً', 'error');
+            } finally {
+                document.body.removeChild(tempTextarea);
+            }
+        });
+
+        // تشغيل المعرض عند تحميل الصفحة
+        renderGallery();
+    </script>
+</body>
+</html>
